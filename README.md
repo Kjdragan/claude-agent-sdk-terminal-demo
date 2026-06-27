@@ -58,20 +58,35 @@ cd claude-agent-sdk-terminal-demo
 python3 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-
-# 3. Get a subscription token and put it in .env
-claude setup-token                 # prints a token (logs you in via browser)
-cp .env.example .env               # then paste the token into .env
 ```
 
-Open `.env` and set:
-
-```
-CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat...your-token...
-```
+That's the whole setup. **You don't need to create `.env` yourself** — the first
+time you run the demo it onboards you (see below).
 
 > If `ANTHROPIC_API_KEY` is set in your shell, it takes precedence over the
 > subscription token. Run `unset ANTHROPIC_API_KEY` to use your subscription.
+
+## First run: subscription onboarding
+
+The very first time you start the demo with no token saved, it walks you through
+authorizing your Claude subscription — automatically:
+
+```
+$ python main.py
+Welcome! This demo runs on your Claude Pro/Max subscription.
+First we'll authorize it — this happens once, then it's saved to .env.
+
+Press Enter to open the login flow in your browser...
+   ... (you approve access in the browser, the CLI prints a token) ...
+Paste the token it printed here: sk-ant-oat...
+
+Saved to .env. You're authorized — starting the agent.
+```
+
+It runs `claude setup-token` for you, saves the result to `.env`, and drops
+straight into the chat. Every run after that finds the token in `.env` and skips
+onboarding. (Prefer to do it by hand? Run `claude setup-token`, then
+`cp .env.example .env` and paste the token in.)
 
 ## Run
 

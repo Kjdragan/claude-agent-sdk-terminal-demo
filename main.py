@@ -16,6 +16,8 @@ first look for someone who has never used it before. Two ideas to take away:
 
 import asyncio
 import os
+import shutil
+import subprocess
 from pathlib import Path
 
 from claude_agent_sdk import (
@@ -44,6 +46,54 @@ def load_env(path: str = ".env") -> None:
         os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
 
 
+def save_token(token: str, path: str = ".env") -> None:
+    """Write the token into .env, replacing any existing token line."""
+    env_file = Path(path)
+    lines = env_file.read_text().splitlines() if env_file.exists() else []
+    out, replaced = [], False
+    for line in lines:
+        if line.strip().startswith("CLAUDE_CODE_OAUTH_TOKEN="):
+            out.append(f"CLAUDE_CODE_OAUTH_TOKEN={token}")
+            replaced = True
+        else:
+            out.append(line)
+    if not replaced:
+        out.append(f"CLAUDE_CODE_OAUTH_TOKEN={token}")
+    env_file.write_text("\n".join(out) + "\n")
+
+
+def onboard() -> bool:
+    """First-run flow: authorize the user's Claude subscription and save a token.
+
+    Runs automatically the first time the demo starts (when no token is set).
+    Returns True if a token was saved and the demo can continue.
+    """
+    print("Welcome! This demo runs on your Claude Pro/Max subscription.")
+    print("First we'll authorize it — this happens once, then it's saved to .env.\n")
+
+    if shutil.which("claude") is None:
+        print("You need the Claude Code CLI to authorize. Install it with:")
+        print("  curl -fsSL https://claude.ai/install.sh | bash")
+        print("  (or: npm install -g @anthropic-ai/claude-code)")
+        print("Then run this demo again.")
+        return False
+
+    input("Press Enter to open the login flow in your browser... ")
+    # Hand the terminal to the CLI so you can complete the browser login. When
+    # it finishes it prints a token (starts with sk-ant-oat...).
+    subprocess.run(["claude", "setup-token"])
+
+    token = input("\nPaste the token it printed here: ").strip()
+    if not token:
+        print("No token entered — run the demo again when you're ready.")
+        return False
+
+    save_token(token)
+    os.environ["CLAUDE_CODE_OAUTH_TOKEN"] = token
+    print("\nSaved to .env. You're authorized — starting the agent.\n")
+    return True
+
+
 # Tools Claude is pre-approved to use. Because they are listed here, Claude runs
 # them without pausing to ask permission -- otherwise a terminal demo would hang
 # waiting for an approval it can't show. Bash means Claude can run any shell
@@ -68,9 +118,8 @@ OPTIONS = ClaudeAgentOptions(
 async def main() -> None:
     load_env()
     if not os.environ.get("CLAUDE_CODE_OAUTH_TOKEN") and not os.environ.get("ANTHROPIC_API_KEY"):
-        print("No credentials found. Copy .env.example to .env and add your")
-        print("CLAUDE_CODE_OAUTH_TOKEN (run `claude setup-token` to get one).")
-        return
+        if not onboard():
+            return
 
     print("Claude terminal agent. Ask a question or give it a task.")
     print('Type "exit" or press Ctrl-D to quit.\n')
