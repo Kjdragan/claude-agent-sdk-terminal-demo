@@ -152,8 +152,83 @@ makes the demo able to *do tasks*. Run it somewhere you're comfortable with that
 and trim the `ALLOWED_TOOLS` list in `main.py` if you want it more restricted
 (e.g. drop `Bash` and `Write` for a read-only, answer-only assistant).
 
-## Where to go next
+## Next steps: have the agent upgrade itself
+
+Here's the fun part. Because the agent runs in this folder with the `Write`,
+`Edit`, and `Bash` tools, it can **edit its own `main.py`**. So you grow the app
+by *talking to it* — paste one of the prompts below at the `You:` prompt, let it
+make the change, then **exit and rerun `python main.py`** so the new code loads.
+(Some upgrades add a dependency or need Node installed — that's expected once you
+go past the bare-bones base.)
+
+Each prompt below teaches one real Agent SDK extension point.
+
+**1. Teach it a Skill (research → written report).** A
+[Skill](https://code.claude.com/docs/en/agent-sdk/skills) is a reusable
+capability Claude invokes on its own.
+
+```
+Create a Claude Skill at .claude/skills/report-writer/SKILL.md. When I ask for a
+report on a topic, it should research the topic with WebSearch and write a clean
+Markdown report — title, summary, sections, and a Sources list — into a reports/
+folder. Then update main.py so the SDK loads skills: set
+setting_sources=["project"] and skills="all" in ClaudeAgentOptions. Tell me to
+restart you when it's done.
+```
+
+**2. Give it a brand-new tool (YouTube transcripts).** This is the
+[custom-tool](https://code.claude.com/docs/en/agent-sdk/custom-tools) pattern: a
+Python function Claude can call.
+
+```
+Add a custom tool get_youtube_transcript(url) that returns a video's transcript
+using the youtube-transcript-api package (add it to requirements.txt and install
+it). Define it with the SDK's @tool decorator, bundle it with
+create_sdk_mcp_server, register it under mcp_servers in ClaudeAgentOptions, and
+pre-approve it by adding "mcp__<server>__get_youtube_transcript" to allowed_tools.
+After I restart you, I'll paste a YouTube link and ask you to summarize it.
+```
+
+**3. Plug in an external MCP server (browser automation).** Reuse tools other
+people built via [MCP](https://code.claude.com/docs/en/agent-sdk/mcp).
+
+```
+Give yourself browser automation by connecting the Playwright MCP server. In
+ClaudeAgentOptions, add mcp_servers={"playwright": {"command": "npx", "args":
+["@playwright/mcp@latest"]}} and pre-approve its tools with "mcp__playwright__*"
+in allowed_tools. Then I can ask you to open a page, click around, and screenshot
+it. (Needs Node/npx installed.)
+```
+
+**4. Give it memory between runs.** Mixes a custom tool with a custom
+`system_prompt`.
+
+```
+Give yourself long-term memory. At startup, if memory.md exists, load its
+contents into your system_prompt. Add a custom tool remember(fact) that appends a
+bullet to memory.md, and pre-approve it. After I restart you, you should recall
+anything I asked you to remember.
+```
+
+**5. Delegate to a [subagent](https://code.claude.com/docs/en/agent-sdk/subagents)
+(deep research).**
+
+```
+Add a "researcher" subagent using the agents option (AgentDefinition) with its
+own prompt and the Read, Glob, Grep, WebSearch, and WebFetch tools, and add
+"Agent" to allowed_tools so you can call it. When I ask for deep research,
+delegate to the researcher and summarize what it finds.
+```
+
+Mix and match — once it has the YouTube tool *and* the report Skill, "summarize
+this video and write it up as a report" chains both. When something doesn't work,
+just tell the agent the error and ask it to fix itself.
+
+## Learn more
 
 - [Agent SDK overview](https://code.claude.com/docs/en/agent-sdk/overview)
 - [Python SDK reference](https://code.claude.com/docs/en/agent-sdk/python)
-- Try changing the `system_prompt` in `main.py`, or add a custom tool via MCP.
+- [Custom tools](https://code.claude.com/docs/en/agent-sdk/custom-tools) ·
+  [Skills](https://code.claude.com/docs/en/agent-sdk/skills) ·
+  [MCP](https://code.claude.com/docs/en/agent-sdk/mcp) ·
+  [Subagents](https://code.claude.com/docs/en/agent-sdk/subagents)
