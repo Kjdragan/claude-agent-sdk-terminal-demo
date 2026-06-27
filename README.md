@@ -1,6 +1,6 @@
 # Claude Terminal Agent — a minimal Agent SDK demo
 
-A ~90-line Python program that gives you a Claude agent in your terminal. Ask it
+A small (~150-line) Python program that gives you a Claude agent in your terminal. Ask it
 a question, give it a task, and it keeps looping — ready for the next prompt —
 until you quit. It's the smallest useful thing you can build with the
 [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview), meant as
@@ -9,7 +9,7 @@ a first look for someone who has never used the SDK before.
 ```
 You: what files are in this folder?
   [using Bash]
-Claude: There are 5 files: main.py, requirements.txt, README.md, .env.example, and .gitignore.
+Claude: main.py, requirements.txt, README.md, SAMPLE_RUN.md, .env.example, and .gitignore.
 
 You: create notes.txt with three ideas for a weekend project
   [using Write]
@@ -36,11 +36,38 @@ This demo shows the two ideas that make it an *agent* and not just a chatbot:
 
 The whole thing is in [`main.py`](./main.py) — read it, it's short.
 
+## You could build this from a single prompt
+
+You don't actually *need* this repo. Everything in it — the app, the `.env`
+setup, the requirements file — was produced by one plain-English prompt to a
+fresh [Claude Code](https://claude.com/claude-code) session (the **Code tab** in
+the Claude desktop app, or the `claude` command in a terminal). If you'd rather
+build your own from nothing than clone this, paste this and let Claude do it:
+
+```
+Build a tiny Python terminal app using the Claude Agent SDK (the
+`claude-agent-sdk` pip package). It should loop: I type a question or a task,
+Claude answers and can use its built-in tools (read/write files, run shell
+commands, search the web) to actually do it, then it waits for my next message
+until I type "exit". Authenticate with my Claude Pro/Max subscription using a
+CLAUDE_CODE_OAUTH_TOKEN read from a .env file. Keep it dead simple: one
+dependency, a requirements.txt, and a .env.example. Then create the virtual
+environment, install it, tell me to run `claude setup-token` to get my token,
+and show me how to start it.
+```
+
+Want it published like this one? Add a sentence: *"Then make it a git repo and
+publish it as a new public GitHub repository."* Everything past this point
+assumes you cloned the repo, which is the quickest way to get going.
+
 ## Requirements
 
-- **Python 3.10+**
-- **A Claude Pro or Max subscription** — this demo runs on your subscription, no
-  API key or per-token billing.
+- **Python 3.10+** — check with `python3 --version`.
+- **A paid Claude plan — the free tier will not work.** You need at least
+  **Claude Pro** (the entry paid plan, ~$20/month); **Max** works too. The login
+  step below (`claude setup-token`) only succeeds on a paid subscription. The
+  demo then runs entirely on that subscription — no separate API key, no
+  per-token billing.
 - **The Claude Code CLI**, used once to mint a login token. If you already use
   Claude Code you have it. If not:
   ```bash
@@ -126,31 +153,28 @@ install everything in requirements.txt, and create a .env file from
 .env.example. Tell me exactly what to paste into .env to finish.
 ```
 
-**Build the whole thing from scratch** — the best way to see how little code this
-takes. Paste this into an empty folder and watch Claude write it:
+**Build the whole thing from scratch instead?** You don't need to clone anything
+— see [You could build this from a single prompt](#you-could-build-this-from-a-single-prompt)
+near the top for the one-prompt version.
 
-```
-Build a minimal terminal app in Python using the Claude Agent SDK
-(`claude-agent-sdk`). It should be a loop that reads a line from stdin, sends it
-to Claude, prints the reply, and waits for the next prompt until I type "exit".
-Use ClaudeSDKClient so the conversation keeps its memory across turns, and
-pre-approve the Read, Write, Edit, Bash, Glob, Grep, WebSearch, and WebFetch
-tools so it can actually do tasks without asking permission each time.
-Authenticate with my Claude subscription via a CLAUDE_CODE_OAUTH_TOKEN read from
-a .env file (load the .env yourself with a few lines of standard library — no
-extra dependency). Add a requirements.txt, a .env.example, a .gitignore that
-excludes .env and .venv, and a short README. Then set up the virtual
-environment, install it, and help me get my token so I can run it.
-```
+## Is this safe to run?
 
-## A note on what it's allowed to do
+Short version: yes, for a tool you run on your own machine — but understand what
+you're handing it.
 
-The agent is pre-approved to use `Read`, `Write`, `Edit`, `Bash`, `Glob`,
-`Grep`, `WebSearch`, and `WebFetch` — meaning it can run shell commands and
-change files in the folder you launch it from, without asking first. That's what
-makes the demo able to *do tasks*. Run it somewhere you're comfortable with that,
-and trim the `ALLOWED_TOOLS` list in `main.py` if you want it more restricted
-(e.g. drop `Bash` and `Write` for a read-only, answer-only assistant).
+- **It acts as you, in the folder you start it from.** Because `Bash`, `Write`,
+  and `Edit` are pre-approved, the agent can run shell commands and create or
+  change files in that folder *without asking first*. That's exactly what lets it
+  do real tasks. Start it in a project or scratch folder — not your home or a
+  system directory — and only ask it to do things you'd be comfortable doing
+  yourself. Want an answer-only assistant? Remove `Bash`, `Write`, and `Edit`
+  from the `ALLOWED_TOOLS` list in [`main.py`](./main.py).
+- **Your token is a password.** `claude setup-token` mints a token tied to your
+  subscription. The demo saves it to `.env`, which is already in `.gitignore`, so
+  it is never committed or pushed. Don't paste it anywhere public or share it.
+- **Only paste prompts and links you trust.** An agent does what it's told —
+  including instructions that might be hidden inside a web page or file you point
+  it at. Treat it like your own hands on the keyboard.
 
 ## Next steps: have the agent upgrade itself
 
