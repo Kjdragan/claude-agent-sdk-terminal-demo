@@ -9,7 +9,7 @@ a first look for someone who has never used the SDK before.
 ```
 You: what files are in this folder?
   [using Bash]
-Claude: main.py, requirements.txt, README.md, SAMPLE_RUN.md, .env.example, and .gitignore.
+Claude: main.py, pyproject.toml, uv.lock, README.md, SAMPLE_RUN.md, .env.example, and .gitignore.
 
 You: create notes.txt with three ideas for a weekend project
   [using Write]
@@ -39,21 +39,20 @@ The whole thing is in [`main.py`](./main.py) — read it, it's short.
 ## You could build this from a single prompt
 
 You don't actually *need* this repo. Everything in it — the app, the `.env`
-setup, the requirements file — was produced by one plain-English prompt to a
-fresh [Claude Code](https://claude.com/claude-code) session (the **Code tab** in
-the Claude desktop app, or the `claude` command in a terminal). If you'd rather
-build your own from nothing than clone this, paste this and let Claude do it:
+setup, the uv project — was produced by one plain-English prompt to a fresh
+[Claude Code](https://claude.com/claude-code) session (the **Code tab** in the
+Claude desktop app, or the `claude` command in a terminal). If you'd rather build
+your own from nothing than clone this, paste this and let Claude do it:
 
 ```
 Build a tiny Python terminal app using the Claude Agent SDK (the
-`claude-agent-sdk` pip package). It should loop: I type a question or a task,
-Claude answers and can use its built-in tools (read/write files, run shell
-commands, search the web) to actually do it, then it waits for my next message
-until I type "exit". Authenticate with my Claude Pro/Max subscription using a
-CLAUDE_CODE_OAUTH_TOKEN read from a .env file. Keep it dead simple: one
-dependency, a requirements.txt, and a .env.example. Then create the virtual
-environment, install it, tell me to run `claude setup-token` to get my token,
-and show me how to start it.
+`claude-agent-sdk` package), managed with uv. It should loop: I type a question
+or a task, Claude answers and can use its built-in tools (read/write files, run
+shell commands, search the web) to actually do it, then it waits for my next
+message until I type "exit". Authenticate with my Claude Pro/Max subscription
+using a CLAUDE_CODE_OAUTH_TOKEN read from a .env file. Keep it dead simple: a
+pyproject.toml with the one dependency and a .env.example. Then run it with
+`uv run main.py` and tell me to run `claude setup-token` to get my token.
 ```
 
 Want it published like this one? Add a sentence: *"Then make it a git repo and
@@ -62,7 +61,13 @@ assumes you cloned the repo, which is the quickest way to get going.
 
 ## Requirements
 
-- **Python 3.10+** — check with `python3 --version`.
+- **[uv](https://docs.astral.sh/uv/)** — the dependency manager this project uses.
+  It also installs the right Python (3.10+) for you, so it's the only thing you
+  need to install. If you don't have it:
+  ```bash
+  curl -LsSf https://astral.sh/uv/install.sh | sh     # macOS / Linux
+  # Windows: powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+  ```
 - **A paid Claude plan — the free tier will not work.** You need at least
   **Claude Pro** (the entry paid plan, ~$20/month); **Max** works too. The login
   step below (`claude setup-token`) only succeeds on a paid subscription. The
@@ -77,18 +82,14 @@ assumes you cloned the repo, which is the quickest way to get going.
 ## Setup
 
 ```bash
-# 1. Clone and enter the project
 git clone https://github.com/Kjdragan/claude-agent-sdk-terminal-demo.git
 cd claude-agent-sdk-terminal-demo
-
-# 2. Create a simple virtual environment and install the one dependency
-python3 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
 ```
 
-That's the whole setup. **You don't need to create `.env` yourself** — the first
-time you run the demo it onboards you (see below).
+That's the whole setup — there's no separate venv or install step. The first time
+you run `uv run main.py` (below), uv creates the virtual environment and installs
+the one dependency automatically. **You don't need to create `.env` yourself**
+either — the first run onboards you (see below).
 
 > If `ANTHROPIC_API_KEY` is set in your shell, it takes precedence over the
 > subscription token. Run `unset ANTHROPIC_API_KEY` to use your subscription.
@@ -99,7 +100,7 @@ The very first time you start the demo with no token saved, it walks you through
 authorizing your Claude subscription — automatically:
 
 ```
-$ python main.py
+$ uv run main.py
 Welcome! This demo runs on your Claude Pro/Max subscription.
 First we'll authorize it — this happens once, then it's saved to .env.
 
@@ -122,11 +123,12 @@ and writing and running a small program.
 ## Run
 
 ```bash
-python main.py
+uv run main.py
 ```
 
 Type a question or a task, press Enter, and Claude responds. The `[using Bash]`
-lines show it reaching for a tool. Type `exit` (or Ctrl-D) to quit.
+lines show it reaching for a tool. Type `exit` (or Ctrl-D) to quit. (`uv run`
+also keeps dependencies in sync, so this is the only command you need.)
 
 ## Don't want to type the commands? Let Claude do it
 
@@ -139,18 +141,18 @@ built on — so it will run the commands for you.
 
 ```
 Clone https://github.com/Kjdragan/claude-agent-sdk-terminal-demo into this
-folder. Create a Python virtual environment, install requirements.txt into it,
-then walk me through running `claude setup-token` and pasting the token into a
-new .env file. When that's done, run `python main.py` so I can try it.
+folder. It uses uv, so install uv if needed, then walk me through running
+`claude setup-token` and pasting the token into a new .env file. When that's
+done, run `uv run main.py` so I can try it.
 ```
 
 **Just provision the environment** — if you already have the files and only need
-the venv set up:
+it set up:
 
 ```
-Set up this project for me: create a Python virtual environment in .venv,
-install everything in requirements.txt, and create a .env file from
-.env.example. Tell me exactly what to paste into .env to finish.
+Set up this project for me with uv: make sure uv is installed, run `uv sync` to
+create the environment and install the one dependency, and create a .env file
+from .env.example. Tell me exactly what to paste into .env to finish.
 ```
 
 **Build the whole thing from scratch instead?** You don't need to clone anything
@@ -186,7 +188,7 @@ Here's the fun part. The agent can write and edit files in this folder (that's
 the fenced project directory from the safety section), so it can **edit its own
 `main.py`**. You grow the app by *talking to it* — paste one of the prompts below
 at the `You:` prompt, let it make the change, then **exit and rerun
-`python main.py`** so the new code loads.
+`uv run main.py`** so the new code loads.
 (Some upgrades add a dependency or need Node installed — that's expected once you
 go past the bare-bones base.)
 
@@ -211,8 +213,8 @@ Python function Claude can call.
 
 ```
 Add a custom tool get_youtube_transcript(url) that returns a video's transcript
-using the youtube-transcript-api package (add it to requirements.txt and install
-it). Define it with the SDK's @tool decorator, bundle it with
+using the youtube-transcript-api package (add it with `uv add
+youtube-transcript-api`). Define it with the SDK's @tool decorator, bundle it with
 create_sdk_mcp_server, register it under mcp_servers in ClaudeAgentOptions, and
 pre-approve it by adding "mcp__<server>__get_youtube_transcript" to allowed_tools.
 After I restart you, I'll paste a YouTube link and ask you to summarize it.

@@ -7,8 +7,7 @@ code — all from the terminal.
 
 ```text
 $ cd claude-agent-sdk-terminal-demo
-$ source .venv/bin/activate
-$ python main.py
+$ uv run main.py
 Welcome! This demo runs on your Claude Pro/Max subscription.
 First we'll authorize it — this happens once, then it's saved to .env.
 
