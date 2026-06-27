@@ -1,6 +1,6 @@
 # Claude Terminal Agent — a minimal Agent SDK demo
 
-A small (~150-line) Python program that gives you a Claude agent in your terminal. Ask it
+A small (~180-line) Python program that gives you a Claude agent in your terminal. Ask it
 a question, give it a task, and it keeps looping — ready for the next prompt —
 until you quit. It's the smallest useful thing you can build with the
 [Claude Agent SDK](https://code.claude.com/docs/en/agent-sdk/overview), meant as
@@ -159,16 +159,20 @@ near the top for the one-prompt version.
 
 ## Is this safe to run?
 
-Short version: yes, for a tool you run on your own machine — but understand what
-you're handing it.
+Short version: yes, for a tool you run on your own machine — and it has a guard
+rail built in.
 
-- **It acts as you, in the folder you start it from.** Because `Bash`, `Write`,
-  and `Edit` are pre-approved, the agent can run shell commands and create or
-  change files in that folder *without asking first*. That's exactly what lets it
-  do real tasks. Start it in a project or scratch folder — not your home or a
-  system directory — and only ask it to do things you'd be comfortable doing
-  yourself. Want an answer-only assistant? Remove `Bash`, `Write`, and `Edit`
-  from the `ALLOWED_TOOLS` list in [`main.py`](./main.py).
+- **Its file writes are fenced to this project folder.** A small permission
+  check in [`main.py`](./main.py) (the `can_use_tool` function) lets the agent
+  create and edit files *inside the project* — including its own `main.py`, which
+  is exactly how it can build and fix itself — but **refuses any write outside the
+  project directory**, so it can't scatter or clobber files elsewhere on your
+  machine. Reading, web search, and shell commands stay unrestricted so it can
+  still do real work. (Heads up: shell `Bash` is powerful and isn't path-limited
+  the way writes are, so still launch the demo from a sensible folder; for hard
+  isolation use a container or VM. Want it stricter? Drop `Bash` from
+  `ALLOWED_TOOLS`, and to forbid file changes entirely have `can_use_tool` return
+  a deny for the write tools.)
 - **Your token is a password.** `claude setup-token` mints a token tied to your
   subscription. The demo saves it to `.env`, which is already in `.gitignore`, so
   it is never committed or pushed. Don't paste it anywhere public or share it.
@@ -178,10 +182,11 @@ you're handing it.
 
 ## Next steps: have the agent upgrade itself
 
-Here's the fun part. Because the agent runs in this folder with the `Write`,
-`Edit`, and `Bash` tools, it can **edit its own `main.py`**. So you grow the app
-by *talking to it* — paste one of the prompts below at the `You:` prompt, let it
-make the change, then **exit and rerun `python main.py`** so the new code loads.
+Here's the fun part. The agent can write and edit files in this folder (that's
+the fenced project directory from the safety section), so it can **edit its own
+`main.py`**. You grow the app by *talking to it* — paste one of the prompts below
+at the `You:` prompt, let it make the change, then **exit and rerun
+`python main.py`** so the new code loads.
 (Some upgrades add a dependency or need Node installed — that's expected once you
 go past the bare-bones base.)
 

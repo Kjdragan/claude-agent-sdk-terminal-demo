@@ -24,6 +24,8 @@ from claude_agent_sdk import (
     AssistantMessage,
     ClaudeAgentOptions,
     ClaudeSDKClient,
+    PermissionResultAllow,
+    PermissionResultDeny,
     TextBlock,
     ToolUseBlock,
 )
@@ -94,24 +96,50 @@ def onboard() -> bool:
     return True
 
 
-# Tools Claude is pre-approved to use. Because they are listed here, Claude runs
-# them without pausing to ask permission -- otherwise a terminal demo would hang
-# waiting for an approval it can't show. Bash means Claude can run any shell
-# command in this folder, so keep this list to what you're comfortable with.
-ALLOWED_TOOLS = [
-    "Read", "Write", "Edit", "Bash", "Glob", "Grep", "WebSearch", "WebFetch",
-]
+# The agent's writes are fenced to this project directory. It can create and
+# edit any file in here -- including this main.py, which is how it can build and
+# fix its own code -- but it is refused writes anywhere outside the project, so
+# it can't scatter files across your home or system folders. Reads, web search,
+# and shell stay unrestricted so it can still do real work.
+PROJECT_DIR = Path(__file__).resolve().parent
+
+# Pre-approved tools run without a permission check. The file-writing tools are
+# deliberately left off this list so every write is routed through can_use_tool()
+# below for the project-directory check.
+ALLOWED_TOOLS = ["Read", "Glob", "Grep", "Bash", "WebSearch", "WebFetch"]
+WRITE_TOOLS = {"Write", "Edit", "MultiEdit", "NotebookEdit"}
+
+
+async def can_use_tool(tool_name, tool_input, context):
+    """Permission hook: allow everything, except writes outside the project dir."""
+    if tool_name in WRITE_TOOLS:
+        path = tool_input.get("file_path") or tool_input.get("notebook_path") or ""
+        target = Path(path)
+        target = target.resolve() if target.is_absolute() else (PROJECT_DIR / target).resolve()
+        if target != PROJECT_DIR and PROJECT_DIR not in target.parents:
+            return PermissionResultDeny(
+                message=(
+                    "Writing outside the project directory is blocked. Write inside "
+                    f"{PROJECT_DIR} instead (a relative path stays in the project)."
+                )
+            )
+    return PermissionResultAllow()
+
 
 OPTIONS = ClaudeAgentOptions(
     system_prompt=(
         "You are a helpful assistant running in a terminal. Answer questions "
         "directly and concisely. When asked to do a task, use your tools to "
-        "actually do it, then briefly say what you did."
+        "actually do it, then briefly say what you did. Save any files you create "
+        "inside the current project directory."
     ),
     allowed_tools=ALLOWED_TOOLS,
-    # acceptEdits auto-confirms file edits. Combined with the allow-list above,
-    # the agent runs end to end without interactive prompts.
-    permission_mode="acceptEdits",
+    can_use_tool=can_use_tool,
+    cwd=str(PROJECT_DIR),
+    # "default" routes any tool that isn't pre-approved (Write/Edit) through
+    # can_use_tool above instead of auto-accepting it -- no interactive hang,
+    # because the callback decides instantly.
+    permission_mode="default",
 )
 
 

@@ -62,7 +62,7 @@ Want me to dig into any one of these — showtimes, tickets, or a full day plan?
 You: write me a tic tac toe game
   [using Write]
   [using Bash]
-Claude: ~/tic_tac_toe.py → 2-player hotseat, win/draw detection, self-check
+Claude: tic_tac_toe.py → 2-player hotseat, win/draw detection, self-check
 passes. Verified: X took the top row and won.
 
 skipped: computer opponent. Add when you want single-player — say so and I'll
@@ -71,7 +71,7 @@ bolt on a minimax AI (it's ~15 lines and unbeatable).
 You: yes please
   [using Edit]
   [using Bash]
-Claude: Done. Added a minimax AI to ~/tic_tac_toe.py — it plays perfectly.
+Claude: Done. Added a minimax AI to tic_tac_toe.py — it plays perfectly.
 
 - python3 tic_tac_toe.py        → you (X) vs computer (O)
 - python3 tic_tac_toe.py --2p   → two-player hotseat
