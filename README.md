@@ -88,6 +88,10 @@ straight into the chat. Every run after that finds the token in `.env` and skips
 onboarding. (Prefer to do it by hand? Run `claude setup-token`, then
 `cp .env.example .env` and paste the token in.)
 
+**See [`SAMPLE_RUN.md`](./SAMPLE_RUN.md)** for a full example session — the
+onboarding above, followed by the agent answering questions, searching the web,
+and writing and running a small program.
+
 ## Run
 
 ```bash
